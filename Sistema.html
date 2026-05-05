@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>El Churqui — Inventario · Alto Balance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <span class="brand-icon">🌾</span>
+    <div>
+      <div class="brand-name">El Churqui</div>
+      <div class="brand-sub">Agropecuaria</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="nav-icon">◈</span> Panel Principal
+    </button>
+    <button class="nav-item" data-page="inventario" onclick="navigate('inventario')">
+      <span class="nav-icon">▦</span> Inventario
+    </button>
+    <button class="nav-item" data-page="entradas" onclick="navigate('entradas')">
+      <span class="nav-icon">↓</span> Entradas
+    </button>
+    <button class="nav-item" data-page="salidas" onclick="navigate('salidas')">
+      <span class="nav-icon">↑</span> Salidas
+    </button>
+    <button class="nav-item" data-page="reportes" onclick="navigate('reportes')">
+      <span class="nav-icon">◉</span> Reportes
+    </button>
+    <button class="nav-item" data-page="papelera" onclick="navigate('papelera')">
+      <span class="nav-icon">🗑</span> Papelera
+    </button>
+  </nav>
+  <div class="sidebar-consultora">
+    <div class="consultora-label">Gestionado por</div>
+    <div class="consultora-logo-wrap">
+      <canvas id="logo-sidebar" width="32" height="32"></canvas>
+      <div>
+        <div class="consultora-name">Alto Balance</div>
+        <div class="consultora-sub">Consultora</div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="date-display" id="dateDisplay">--/--/----</div>
+  </div>
+</aside>
+
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+
+<main class="main" id="main">
+
+  <!-- DASHBOARD -->
+  <section class="page active" id="page-dashboard">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Panel Principal</h1>
+        <p class="page-sub">Resumen en tiempo real del inventario</p>
+      </div>
+      <div class="header-consultora">
+        <canvas id="logo-header" width="40" height="40"></canvas>
+        <div>
+          <div class="hc-name">Alto Balance</div>
+          <div class="hc-sub">Consultora</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="stats-grid stats-grid-5">
+      <div class="stat-card stat-total">
+        <div class="stat-label">Total Productos</div>
+        <div class="stat-number" id="stat-total">0</div>
+        <div class="stat-desc">registros en inventario</div>
+      </div>
+      <div class="stat-card stat-ok">
+        <div class="stat-label">Vigentes</div>
+        <div class="stat-number" id="stat-ok">0</div>
+        <div class="stat-desc">sin vencimiento próximo</div>
+      </div>
+      <div class="stat-card stat-warn">
+        <div class="stat-label">Por Vencer</div>
+        <div class="stat-number" id="stat-warn">0</div>
+        <div class="stat-desc">dentro de 30 días</div>
+      </div>
+      <div class="stat-card stat-danger">
+        <div class="stat-label">Vencidos</div>
+        <div class="stat-number" id="stat-danger">0</div>
+        <div class="stat-desc">requieren atención</div>
+      </div>
+      <div class="stat-card stat-costo">
+        <div class="stat-label">Valor del Inventario</div>
+        <div class="stat-number stat-number-sm" id="stat-valor">Bs 0</div>
+        <div class="stat-desc">costo total disponible</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- FIX #1: solo productos vigentes con stock > 0 -->
+      <div class="card card-full">
+        <div class="card-header">
+          <h2 class="card-title">📦 Productos Disponibles</h2>
+          <span class="badge badge-ok" id="badge-disponibles">0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-disponibles">
+            <thead>
+              <tr><th>Producto</th><th>Lote</th><th>Comprado</th><th>Vendido</th><th>Disponible</th><th>Unidad</th><th>Costo Unit.</th><th>Valor Total</th><th>Fabricación</th><th>Vencimiento</th><th>Estado</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">⚠ Por Vencer</h2>
+          <span class="badge badge-warn" id="badge-warn-count">0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-por-vencer">
+            <thead>
+              <tr><th>Producto</th><th>Lote</th><th>Cantidad</th><th>Vence</th><th>Días</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">✕ Vencidos</h2>
+          <span class="badge badge-danger" id="badge-venc-count">0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-vencidos">
+            <thead>
+              <tr><th>Producto</th><th>Lote</th><th>Cantidad</th><th>Venció</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card card-full">
+        <div class="card-header">
+          <h2 class="card-title">◷ Movimientos Recientes</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-movimientos">
+            <thead>
+              <tr><th>Hora</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Lote</th><th>Acción</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INVENTARIO -->
+  <section class="page" id="page-inventario">
+    <header class="page-header">
+      <h1 class="page-title">Inventario</h1>
+      <p class="page-sub">Gestión completa de productos agropecuarios</p>
+    </header>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input class="search-input" type="text" id="search-inventario" placeholder="Buscar producto…" oninput="filtrarInventario()" />
+      </div>
+      <button class="btn btn-primary" onclick="abrirModalProducto()">+ Nuevo Producto</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table class="table" id="tbl-inventario">
+          <thead>
+            <tr><th>Producto</th><th>Cantidad</th><th>Unidad</th><th>Lote</th><th>Costo Unit.</th><th>Valor Total</th><th>Fabricación</th><th>Vencimiento</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENTRADAS -->
+  <section class="page" id="page-entradas">
+    <header class="page-header">
+      <h1 class="page-title">Registro de Entradas</h1>
+      <p class="page-sub">Ingreso de nuevos productos al stock</p>
+    </header>
+    <div class="two-col">
+      <div class="card form-card">
+        <h2 class="card-title">Nueva Entrada</h2>
+        <div class="form-group">
+          <label>Producto *</label>
+          <select id="entrada-producto" onchange="onProductoEntradaChange()">
+            <option value="">— Seleccionar producto —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nombre (si es nuevo)</label>
+          <input type="text" id="entrada-nombre" placeholder="Nombre del producto" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad *</label>
+            <input type="number" id="entrada-cantidad" min="1" placeholder="0" />
+          </div>
+          <div class="form-group">
+            <label>Unidad</label>
+            <select id="entrada-unidad">
+              <option value="kg">kg</option>
+              <option value="lt">lt</option>
+              <option value="unidades">unidades</option>
+              <option value="bolsa">bolsa</option>
+              <option value="caja">caja</option>
+              <option value="saco">saco</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>N° de Lote *</label>
+          <input type="text" id="entrada-lote" placeholder="Ej: L-2025-01" />
+        </div>
+        <!-- COSTOS -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Costo Unitario <span class="lbl-optional">(Bs)</span></label>
+            <input type="number" id="entrada-costo-unitario" min="0" step="0.01" placeholder="0.00" oninput="calcularCostoTotal()" />
+          </div>
+          <div class="form-group">
+            <label>Costo Total</label>
+            <input type="text" id="entrada-costo-total" placeholder="0.00" readonly style="opacity:0.7;cursor:default" />
+          </div>
+        </div>
+        <!-- FIX #3: Fecha de fabricación -->
+        <div class="form-group">
+          <label>Fecha de Fabricación <span class="lbl-optional">(para agroquímicos)</span></label>
+          <input type="date" id="entrada-fabricacion" onchange="calcularVencimientoEntrada()" />
+          <div class="field-hint">Al ingresar la fecha de fabricación se calcula automáticamente el vencimiento (máx. 2 años por ley)</div>
+        </div>
+        <div class="form-group">
+          <label>Fecha de Vencimiento <span class="lbl-optional">(opcional)</span></label>
+          <input type="date" id="entrada-vencimiento" onchange="validarVencimientoEntrada()" />
+          <div class="field-hint" id="hint-vencimiento-entrada">Dejar vacío si el producto no vence</div>
+        </div>
+        <div class="form-group">
+          <label>Proveedor</label>
+          <input type="text" id="entrada-proveedor" placeholder="Nombre del proveedor" />
+        </div>
+        <div class="form-group">
+          <label>Observaciones</label>
+          <textarea id="entrada-obs" rows="2" placeholder="Notas adicionales…"></textarea>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="registrarEntrada()">Registrar Entrada</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Entradas de Hoy</h2>
+          <span class="badge badge-ok" id="count-entradas-hoy">0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-entradas-hoy">
+            <thead>
+              <tr><th>Hora</th><th>Producto</th><th>Cant.</th><th>Lote</th><th>Acción</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SALIDAS -->
+  <section class="page" id="page-salidas">
+    <header class="page-header">
+      <h1 class="page-title">Registro de Salidas</h1>
+      <p class="page-sub">Ventas y consumo de stock</p>
+    </header>
+    <div class="two-col">
+      <div class="card form-card">
+        <h2 class="card-title">Nueva Salida / Venta</h2>
+        <div class="form-group">
+          <label>Producto *</label>
+          <select id="salida-producto" onchange="onProductoSalidaChange()">
+            <option value="">— Seleccionar producto —</option>
+          </select>
+        </div>
+        <div id="salida-stock-info" class="stock-info hidden"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad *</label>
+            <input type="number" id="salida-cantidad" min="1" placeholder="0" />
+          </div>
+          <!-- FIX #2: Tipo incluye mermas/pérdidas prominentemente -->
+          <div class="form-group">
+            <label>Tipo de Salida</label>
+            <select id="salida-tipo">
+              <option value="venta">Venta</option>
+              <option value="merma">Merma / Pérdida</option>
+              <option value="consumo">Consumo Interno</option>
+              <option value="devolucion">Devolución</option>
+            </select>
+          </div>
+        </div>
+        <!-- FIX #2: Panel dinámico según tipo -->
+        <div id="salida-cliente-group" class="form-group">
+          <label>Cliente / Destino</label>
+          <input type="text" id="salida-cliente" placeholder="Nombre del cliente o destino" />
+        </div>
+        <div id="salida-merma-group" class="form-group hidden">
+          <label>Motivo de Merma / Pérdida</label>
+          <select id="salida-merma-motivo">
+            <option value="rotura">Rotura / Derrame</option>
+            <option value="contaminacion">Contaminación</option>
+            <option value="plagas">Daño por plagas</option>
+            <option value="climatico">Daño climático</option>
+            <option value="otro">Otro motivo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Observaciones</label>
+          <textarea id="salida-obs" rows="2" placeholder="Notas adicionales…"></textarea>
+        </div>
+        <button class="btn btn-accent btn-full" onclick="registrarSalida()">Registrar Salida</button>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Salidas de Hoy</h2>
+          <span class="badge badge-danger" id="count-salidas-hoy">0</span>
+        </div>
+        <div class="table-wrap">
+          <table class="table" id="tbl-salidas-hoy">
+            <thead>
+              <tr><th>Hora</th><th>Producto</th><th>Cant.</th><th>Tipo</th><th>Costo Total</th><th>Acción</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTES -->
+  <section class="page" id="page-reportes">
+    <header class="page-header">
+      <h1 class="page-title">Reportes</h1>
+      <p class="page-sub">Historial y exportación de movimientos</p>
+    </header>
+    <div class="toolbar">
+      <div class="form-row no-margin">
+        <div class="form-group no-margin">
+          <label>Fecha</label>
+          <input type="date" id="reporte-fecha" />
+        </div>
+        <div class="form-group no-margin">
+          <label>Tipo</label>
+          <select id="reporte-tipo">
+            <option value="">Todos</option>
+            <option value="entrada">Entradas</option>
+            <option value="salida">Salidas</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="cargarReporte()">Filtrar</button>
+        <button class="btn btn-primary" onclick="exportarExcel()">↓ Excel</button>
+        <button class="btn btn-accent" onclick="exportarPDF()">↓ PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title" id="reporte-titulo">Movimientos del Día</h2>
+        <span class="badge badge-ok" id="reporte-count">0 registros</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="tbl-reporte">
+          <thead>
+            <tr><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Unidad</th><th>Lote</th><th>Costo Unit.</th><th>Costo Total</th><th>Ref.</th><th>Acción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAPELERA -->
+  <section class="page" id="page-papelera">
+    <header class="page-header">
+      <h1 class="page-title">Papelera</h1>
+      <p class="page-sub">Registros eliminados — podés recuperarlos en cualquier momento</p>
+    </header>
+    <div class="toolbar">
+      <span style="color:var(--text3);font-size:13px">Al recuperar un registro el stock se restaura automáticamente.</span>
+      <button class="btn btn-danger" onclick="vaciarPapelera()">🗑 Vaciar Papelera</button>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Registros Eliminados</h2>
+        <span class="badge badge-danger" id="papelera-count">0</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table" id="tbl-papelera">
+          <thead>
+            <tr><th>Fecha</th><th>Hora</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Lote</th><th>Eliminado</th><th>Acción</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="modal-producto" onclick="cerrarModal('modal-producto')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-titulo">Nuevo Producto</h2>
+      <button class="modal-close" onclick="cerrarModal('modal-producto')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="prod-id" />
+      <div class="form-group">
+        <label>Nombre del Producto *</label>
+        <input type="text" id="prod-nombre" placeholder="Ej: Herbicida 2,4-D" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cantidad *</label>
+          <input type="number" id="prod-cantidad" min="0" placeholder="0" />
+        </div>
+        <div class="form-group">
+          <label>Unidad</label>
+          <select id="prod-unidad">
+            <option value="kg">kg</option>
+            <option value="lt">lt</option>
+            <option value="unidades">unidades</option>
+            <option value="bolsa">bolsa</option>
+            <option value="caja">caja</option>
+            <option value="saco">saco</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>N° de Lote *</label>
+          <input type="text" id="prod-lote" placeholder="L-2025-01" />
+        </div>
+        <div class="form-group">
+          <label>Categoría</label>
+          <select id="prod-categoria" onchange="onCategoriaChange()">
+            <option>Agroquímicos</option>
+            <option>Semillas</option>
+            <option>Fertilizantes</option>
+            <option>Veterinarios</option>
+            <option>Herramientas</option>
+            <option>Otros</option>
+          </select>
+        </div>
+      </div>
+      <!-- FIX #3: Fechas de fabricación y vencimiento en modal -->
+      <div id="prod-fechas-group">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fecha de Fabricación <span class="lbl-optional">(agroquímicos)</span></label>
+            <input type="date" id="prod-fabricacion" onchange="calcularVencimientoModal()" />
+          </div>
+          <div class="form-group">
+            <label>Fecha de Vencimiento <span class="lbl-optional">(opcional)</span></label>
+            <input type="date" id="prod-vencimiento" onchange="validarVencimientoModal()" />
+          </div>
+        </div>
+        <div class="field-hint" id="hint-vencimiento-modal" style="margin-top:-8px;margin-bottom:10px">
+          Máx. 2 años desde fabricación según ley
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
